@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
     public Transform goalBlocksParent;
     public TMP_Text timerTxt;
     public TMP_Text levelTxt;
-    public float minSwipeDistance = 50f;
+    public float minSwipeDistance = 30f;
 
     [Header("Panel UI")]
     public Transform pausePanel;
@@ -32,6 +32,8 @@ public class GameManager : MonoBehaviour
     public Slider musicSlider;
     public Slider sfxSlider;
     public Animator crossfade;
+    public Transform noAdsPanel;
+    public Button add30SecButton;
 
     [Header("Audio Source")]
     public AudioSource backgroundMusic;
@@ -51,6 +53,8 @@ public class GameManager : MonoBehaviour
     private int tableSize;
     private float timer;
     private float totalTimer;
+    private float twoStarTime;
+    private float oneStarTime;
     private List<Color> colors;
     private int activeAnimations = 0;
     private Queue<IInputQueue> inputBuffer;
@@ -58,6 +62,8 @@ public class GameManager : MonoBehaviour
     private bool winShouldCalled = false;
     private GameState gameState;
     private int level;
+    private int add30SecChances = 2;
+    private int add30SecDone = 0;
 
     private float cellSizeX;
     private float cellSizeY;
@@ -65,6 +71,7 @@ public class GameManager : MonoBehaviour
 
     private PlayerData playerData;
     private InterstitialAdManager interstitialAdManager;
+    private RewardedAdManager rewardedAdManager;
 
     interface IInputQueue { }
 
@@ -102,6 +109,7 @@ public class GameManager : MonoBehaviour
         playerData = PlayerData.LoadData();
         level = NavigatorController.GetArguments<int>("Game");
         interstitialAdManager = InterstitialAdManager.GetInstance();
+        rewardedAdManager = RewardedAdManager.GetInstance();
 
         inputBuffer = new Queue<IInputQueue>();
         goalTable = new List<List<Color>>();
@@ -138,8 +146,10 @@ public class GameManager : MonoBehaviour
 
         levelTxt.text = "LEVEL: " + level;
 
-        totalTimer = tableSize * 40;
-        timer = tableSize * 40;
+        totalTimer = (tableSize - 3) * 75;
+        timer = (tableSize - 3) * 75;
+        twoStarTime = totalTimer / 3;
+        oneStarTime = totalTimer / 6;
 
         UnityEngine.Random.InitState(level);
 
@@ -288,20 +298,27 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            switch (gameState)
+            if (noAdsPanel.gameObject.activeSelf)
             {
-                case GameState.PLAYING:
-                    Pause();
-                    break;
-                case GameState.PAUSE:
-                    Home();
-                    break;
-                case GameState.LOSE:
-                    Home();
-                    break;
-                case GameState.WIN:
-                    Home();
-                    break;
+                CloseNoAdsPanel();
+            }
+            else
+            {
+                switch (gameState)
+                {
+                    case GameState.PLAYING:
+                        Pause();
+                        break;
+                    case GameState.PAUSE:
+                        Home();
+                        break;
+                    case GameState.LOSE:
+                        Home();
+                        break;
+                    case GameState.WIN:
+                        Home();
+                        break;
+                }
             }
         }
 
@@ -386,11 +403,11 @@ public class GameManager : MonoBehaviour
 
                 int stars = 0;
 
-                if (timer >= totalTimer / 3)
+                if (timer >= twoStarTime)
                 {
                     stars = 3;
                 }
-                else if (timer >= totalTimer / 6)
+                else if (timer >= oneStarTime)
                 {
                     stars = 2;
                 }
@@ -887,6 +904,55 @@ public class GameManager : MonoBehaviour
     {
         playerData.sfxVolume = value;
         UpdateSfxVolume();
+    }
+
+    public void Add30Seconds()
+    {
+        if (add30SecDone < add30SecChances)
+        {
+            buttonClickSfx.Play();
+            backgroundMusic.Pause();
+            Time.timeScale = 0f;
+
+            rewardedAdManager.ShowRewardedAd(() => { }, () =>
+            {
+                Time.timeScale = 1f;
+                timer += 30f;
+                totalTimer += 30f;
+                add30SecDone++;
+
+                if (add30SecDone >= add30SecChances)
+                {
+                    add30SecButton.interactable = false;
+                }
+                backgroundMusic.UnPause();
+            }, () =>
+            {
+                StartCoroutine(SetPauseAfterAd());
+                OpenNoAdsPanel();
+            });
+        }
+    }
+
+    private void OpenNoAdsPanel()
+    {
+        noAdsPanel.gameObject.SetActive(true);
+        noAdsPanel.GetChild(1).GetComponent<Animator>().SetBool("isOpen", true);
+    }
+
+    public void CloseNoAdsPanel()
+    {
+        Time.timeScale = 1f;
+        buttonClickSfx.Play();
+        noAdsPanel.GetChild(1).GetComponent<Animator>().SetBool("isOpen", false);
+        StartCoroutine(DelayedPanelClose(noAdsPanel));
+        backgroundMusic.UnPause();
+    }
+
+    private IEnumerator DelayedPanelClose(Transform panel)
+    {
+        yield return new WaitForSecondsRealtime(0.2f);
+        panel.gameObject.SetActive(false);
     }
 
     private IEnumerator SetPauseAfterAd()

@@ -21,8 +21,6 @@ public class PlayerData
     public float musicVolume;
     public float sfxVolume;
 
-    private static string fileName = "player_data.2r";
-
     public PlayerData()
     {
         playerAccessToken = "";
@@ -37,25 +35,26 @@ public class PlayerData
         sfxVolume = 1f;
     }
 
+    public static string GetPath()
+    {
+        return Path.Combine(Application.persistentDataPath, "player_data.2r");
+    }
+
     public static PlayerData LoadData()
     {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-        return PersistentDataController.LoadData<PlayerData>(path);
+        return PersistentDataController.LoadData<PlayerData>(GetPath());
     }
 
     public bool SaveData()
     {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-        return PersistentDataController.SaveData(this, path);
+        return PersistentDataController.SaveData(this, GetPath());
     }
 
     public static bool SaveData(byte[] data)
     {
-        string filePath = Path.Combine(Application.persistentDataPath, fileName);
-
         try
         {
-            File.WriteAllBytes(filePath, data);
+            File.WriteAllBytes(GetPath(), data);
 
             return true;
         }
@@ -68,15 +67,15 @@ public class PlayerData
 
     public static byte[] ReadData()
     {
-        string filePath = Path.Combine(Application.persistentDataPath, fileName);
+        string path = GetPath();
 
-        if (File.Exists(filePath))
+        if (File.Exists(path))
         {
-            return File.ReadAllBytes(filePath);
+            return File.ReadAllBytes(path);
         }
         else
         {
-            Debug.LogError("File not found: " + filePath);
+            Debug.LogError("File not found: " + path);
             return null;
         }
     }
