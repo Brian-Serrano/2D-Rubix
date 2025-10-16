@@ -444,8 +444,11 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator Win(int stars)
     {
-        yield return new WaitForSecondsRealtime(0.3f);
+        crossfade.GetComponent<CanvasGroup>().blocksRaycasts = true;
 
+        yield return new WaitForSecondsRealtime(1f);
+
+        crossfade.GetComponent<CanvasGroup>().blocksRaycasts = false;
         winPanel.gameObject.SetActive(true);
         winPanel.GetChild(1).GetComponent<Animator>().SetBool("isOpen", true);
 
@@ -457,9 +460,11 @@ public class GameManager : MonoBehaviour
     private IEnumerator Lose()
     {
         loseSfx.Play();
+        crossfade.GetComponent<CanvasGroup>().blocksRaycasts = true;
 
-        yield return new WaitForSecondsRealtime(0.3f);
+        yield return new WaitForSecondsRealtime(1f);
 
+        crossfade.GetComponent<CanvasGroup>().blocksRaycasts = false;
         losePanel.gameObject.SetActive(true);
         losePanel.GetChild(1).GetComponent<Animator>().SetBool("isOpen", true);
     }
