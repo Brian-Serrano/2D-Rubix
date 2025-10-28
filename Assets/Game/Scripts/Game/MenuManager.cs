@@ -62,7 +62,6 @@ public class MenuManager : MonoBehaviour
 
     private PlayerData playerData;
     private TDRubixHTTPClient client;
-    private BannerAdManager bannerAdManager;
 
     class AchievementData
     {
@@ -82,7 +81,8 @@ public class MenuManager : MonoBehaviour
     {
         playerData = PlayerData.LoadData();
         client = TDRubixHTTPClient.GetInstance();
-        bannerAdManager = BannerAdManager.GetInstance();
+
+        BannerAdManager.GetInstance().EnsureBannerVisible();
 
         levelTxt.text = "LEVEL: " + (playerData.levelStars.Count + 1);
     }

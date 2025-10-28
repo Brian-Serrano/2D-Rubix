@@ -44,6 +44,8 @@ public class LeaderboardManager : MonoBehaviour
         client = TDRubixHTTPClient.GetInstance();
         cache = new Dictionary<bool, LeaderboardResponse>();
 
+        BannerAdManager.GetInstance().EnsureBannerVisible();
+
         SelectAroundTab();
 
         if (Application.internetReachability != NetworkReachability.NotReachable)

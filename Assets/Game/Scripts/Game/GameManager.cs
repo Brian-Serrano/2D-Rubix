@@ -1,3 +1,4 @@
+using PimDeWitte.UnityMainThreadDispatcher;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -110,6 +111,8 @@ public class GameManager : MonoBehaviour
         level = NavigatorController.GetArguments<int>("Game");
         interstitialAdManager = InterstitialAdManager.GetInstance();
         rewardedAdManager = RewardedAdManager.GetInstance();
+
+        BannerAdManager.GetInstance().EnsureBannerVisible();
 
         inputBuffer = new Queue<IInputQueue>();
         goalTable = new List<List<Color>>();
@@ -340,8 +343,11 @@ public class GameManager : MonoBehaviour
 
                 interstitialAdManager.ShowInterstitial(() =>
                 {
-                    StartCoroutine(SetPauseAfterAd());
-                    StartCoroutine(Lose());
+                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                    {
+                        StartCoroutine(SetPauseAfterAd());
+                        StartCoroutine(Lose());
+                    });
                 });
             }
 
@@ -433,8 +439,11 @@ public class GameManager : MonoBehaviour
 
                 interstitialAdManager.ShowInterstitial(() =>
                 {
-                    StartCoroutine(SetPauseAfterAd());
-                    StartCoroutine(Win(stars));
+                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                    {
+                        StartCoroutine(SetPauseAfterAd());
+                        StartCoroutine(Win(stars));
+                    });
                 });
             }
 
@@ -921,20 +930,26 @@ public class GameManager : MonoBehaviour
 
             rewardedAdManager.ShowRewardedAd(() => { }, () =>
             {
-                Time.timeScale = 1f;
-                timer += 30f;
-                totalTimer += 30f;
-                add30SecDone++;
-
-                if (add30SecDone >= add30SecChances)
+                UnityMainThreadDispatcher.Instance().Enqueue(() =>
                 {
-                    add30SecButton.interactable = false;
-                }
-                backgroundMusic.UnPause();
+                    Time.timeScale = 1f;
+                    timer += 30f;
+                    totalTimer += 30f;
+                    add30SecDone++;
+
+                    if (add30SecDone >= add30SecChances)
+                    {
+                        add30SecButton.interactable = false;
+                    }
+                    backgroundMusic.UnPause();
+                });
             }, () =>
             {
-                StartCoroutine(SetPauseAfterAd());
-                OpenNoAdsPanel();
+                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                {
+                    StartCoroutine(SetPauseAfterAd());
+                    OpenNoAdsPanel();
+                });
             });
         }
     }

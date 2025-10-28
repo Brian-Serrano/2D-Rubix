@@ -38,6 +38,8 @@ public class LevelManager : MonoBehaviour
     {
         items = new List<RectTransform>();
         playerData = PlayerData.LoadData();
+
+        BannerAdManager.GetInstance().EnsureBannerVisible();
     }
 
     private void Start()

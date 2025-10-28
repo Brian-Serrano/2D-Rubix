@@ -40,4 +40,9 @@ public class BannerAdManager
 
         bannerView.LoadAd(request);
     }
+
+    public void EnsureBannerVisible()
+    {
+        RequestBanner();
+    }
 }
