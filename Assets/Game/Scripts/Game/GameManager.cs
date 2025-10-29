@@ -1,4 +1,3 @@
-using PimDeWitte.UnityMainThreadDispatcher;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -73,6 +72,7 @@ public class GameManager : MonoBehaviour
     private PlayerData playerData;
     private InterstitialAdManager interstitialAdManager;
     private RewardedAdManager rewardedAdManager;
+    private MainThreadRun mainThreadRun;
 
     interface IInputQueue { }
 
@@ -111,6 +111,7 @@ public class GameManager : MonoBehaviour
         level = NavigatorController.GetArguments<int>("Game");
         interstitialAdManager = InterstitialAdManager.GetInstance();
         rewardedAdManager = RewardedAdManager.GetInstance();
+        mainThreadRun = MainThreadRun.GetInstance();
 
         BannerAdManager.GetInstance().EnsureBannerVisible();
 
@@ -343,7 +344,7 @@ public class GameManager : MonoBehaviour
 
                 interstitialAdManager.ShowInterstitial(() =>
                 {
-                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                    mainThreadRun.Enqueue(() =>
                     {
                         StartCoroutine(SetPauseAfterAd());
                         StartCoroutine(Lose());
@@ -402,6 +403,8 @@ public class GameManager : MonoBehaviour
 
         if (activeAnimations == 0 && winShouldCalled)
         {
+            winShouldCalled = false;
+
             if (CheckWin())
             {
                 gameState = GameState.WIN;
@@ -439,16 +442,16 @@ public class GameManager : MonoBehaviour
 
                 interstitialAdManager.ShowInterstitial(() =>
                 {
-                    UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                    mainThreadRun.Enqueue(() =>
                     {
                         StartCoroutine(SetPauseAfterAd());
                         StartCoroutine(Win(stars));
                     });
                 });
             }
-
-            winShouldCalled = false;
         }
+
+        mainThreadRun.Update();
     }
 
     private IEnumerator Win(int stars)
@@ -930,7 +933,7 @@ public class GameManager : MonoBehaviour
 
             rewardedAdManager.ShowRewardedAd(() => { }, () =>
             {
-                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                mainThreadRun.Enqueue(() =>
                 {
                     Time.timeScale = 1f;
                     timer += 30f;
@@ -945,7 +948,7 @@ public class GameManager : MonoBehaviour
                 });
             }, () =>
             {
-                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                mainThreadRun.Enqueue(() =>
                 {
                     StartCoroutine(SetPauseAfterAd());
                     OpenNoAdsPanel();
